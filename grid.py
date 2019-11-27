@@ -87,7 +87,13 @@ for train_index, test_index in kf.split(numerical_data):
     test_outputs = numerical_output[test_index]
     #loss_function = nn.CrossEntropyLoss()
     loss_function = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    #ADAM was awful, about 36% accuracy
+    #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    #SGD doing much better but still not great - 50%
+    #Adadelta is actually pretty ok - 48%
+    #Adagrad also good - 48%
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
     epochs = 300
     aggregated_losses = []
