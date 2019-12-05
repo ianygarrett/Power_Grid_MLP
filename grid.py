@@ -5,6 +5,8 @@ from torch import nn, optim
 import torch.nn.functional as F
 import torch.utils.data as data
 import torch
+import matplotlib.pyplot as plt
+from torchvision import models
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.model_selection import KFold #import k fold
 
@@ -57,6 +59,7 @@ numerical_columns = ['tau1', 'tau2', 'tau3', 'tau4', 'p1', 'p2', 'p3', 'p4', 'g1
 named_output = ['stabf']
 numerical_output = ['stab']
 
+
 numerical_data = np.stack([dataset[col].values for col in numerical_columns], 1)
 numerical_data = torch.tensor(numerical_data, dtype=torch.float)
 numerical_output = torch.tensor(dataset[numerical_output].values).flatten()
@@ -80,20 +83,22 @@ kf = KFold(n_splits=5)
 
 for train_index, test_index in kf.split(numerical_data):
     #training the model
-    model = Model(numerical_data.shape[1], 1, [10,10,10], 0.5)
+    model = Model(numerical_data.shape[1], 1, [50,25,10], 0.05)
     numerical_train_data = numerical_data[train_index]
     numerical_test_data = numerical_data[test_index]
     train_outputs = numerical_output[train_index]
     test_outputs = numerical_output[test_index]
     #loss_function = nn.CrossEntropyLoss()
-    loss_function = nn.BCEWithLogitsLoss()
+    #loss_function = nn.BCEWithLogitsLoss()
+    loss_function = nn.MSELoss()
+
 
     #ADAM was awful, about 36% accuracy
     #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    #SGD doing much better but still not great - 50%
+    #SGD doing much better - 50%
     #Adadelta is actually pretty ok - 48%
-    #Adagrad also good - 48%
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+    #Adagrad also ok - 48%
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
     epochs = 300
     aggregated_losses = []
@@ -101,7 +106,7 @@ for train_index, test_index in kf.split(numerical_data):
         i += 1
         y_pred = model(numerical_train_data)
         train_outputs = train_outputs.view(-1,1)
-        single_loss = loss_function(y_pred, train_outputs)
+        single_loss = loss_function(y_pred, train_outputs.float())
         aggregated_losses.append(single_loss)
 
         if i%25 == 1:
@@ -116,7 +121,7 @@ for train_index, test_index in kf.split(numerical_data):
     with torch.no_grad():
         y_val = model(numerical_test_data)
         test_outputs = test_outputs.view(-1,1)
-        loss = loss_function(y_val, test_outputs)
+        loss = loss_function(y_val, test_outputs.float())
     print(f'Loss: {loss:.8f}')
 
     bin_y_val = [None] * 2000
@@ -143,5 +148,5 @@ for train_index, test_index in kf.split(numerical_data):
     print(accuracy_score(to,bin_y_val))
     #print(confusion_matrix(test_outputs,y_val))
     #print(classification_report(test_outputs,y_val))
-    #print(accuracy_score(test_outputs, y_val))
+    #print(accuracy_score(nto, named_y))
 
