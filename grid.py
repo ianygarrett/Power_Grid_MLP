@@ -25,9 +25,6 @@ class MinstDataset(data.Dataset):
     def __len__(self):
         return self.datalist.shape[0]
 
-#train_Set = MinstDataset()
-#trainloader = torch.utils.data.DataLoader( dataset = train_Set , batch_size= 64 , shuffle = True)
-
 class Model(nn.Module):
 
     def __init__(self, num_numerical_cols, output_size, layers, p=0.5):
@@ -50,7 +47,6 @@ class Model(nn.Module):
 
     def forward(self, x_numerical):
         x_numerical = self.batch_norm_num(x_numerical)
-        #x = torch.cat(x_numerical, 1)
         x = self.layers(x_numerical)
         return x
 
@@ -67,37 +63,18 @@ numerical_output = torch.tensor(dataset[numerical_output].values).flatten()
 total_records = 10000
 test_records = int(total_records * .2)
 
-#numerical_train_data = numerical_data[:total_records-test_records]
-#numerical_test_data = numerical_data[total_records-test_records:total_records]
-#train_outputs = numerical_output[:total_records-test_records]
-#test_outputs = numerical_output[total_records-test_records:total_records]
-
-#dataset1 = numerical_data[:2000]
-#dataset2 = numerical_data[2000:4000]
-#dataset3 = numerical_data[4000:6000]
-#dataset4 = numerical_data[6000:8000]
-#dataset5 = numerical_data[8000:]
-#dataset = [dataset1, dataset2, dataset3, dataset4, dataset5]
-
+#Validate healthy data split with K Fold Cross Validation
 kf = KFold(n_splits=5)
 
 for train_index, test_index in kf.split(numerical_data):
-    #training the model
+    #train the model
     model = Model(numerical_data.shape[1], 1, [50,25,10], 0.05)
     numerical_train_data = numerical_data[train_index]
     numerical_test_data = numerical_data[test_index]
     train_outputs = numerical_output[train_index]
     test_outputs = numerical_output[test_index]
-    #loss_function = nn.CrossEntropyLoss()
-    #loss_function = nn.BCEWithLogitsLoss()
     loss_function = nn.MSELoss()
 
-
-    #ADAM was awful, about 36% accuracy
-    #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    #SGD doing much better - 50%
-    #Adadelta is actually pretty ok - 48%
-    #Adagrad also ok - 48%
     optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
     epochs = 300
@@ -146,7 +123,3 @@ for train_index, test_index in kf.split(numerical_data):
     print(confusion_matrix(to,bin_y_val))
     print(classification_report(to,bin_y_val))
     print(accuracy_score(to,bin_y_val))
-    #print(confusion_matrix(test_outputs,y_val))
-    #print(classification_report(test_outputs,y_val))
-    #print(accuracy_score(nto, named_y))
-
